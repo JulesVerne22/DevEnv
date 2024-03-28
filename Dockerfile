@@ -4,6 +4,10 @@ RUN mkdir /dev-env
 
 WORKDIR /dev-env
 
+ENV TZ=America/Chicago
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 RUN apt update && apt upgrade -y
 
 RUN apt install -y tmux ruby php-common libapache2-mod-php php-cli luarocks curl \
