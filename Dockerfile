@@ -10,10 +10,28 @@ ENV EDITOR=nvim
 
 ENV NODE_VERSION=21.7.1 
 
+ENV BASE_USER=jjsmith
+
+ENV PASSWORD=password
+
+ENV HOME=/home/$BASE_USER
+
+RUN dnf update && dnf -y upgrade && dnf -y install sudo
+
+RUN useradd -m -G wheel $BASE_USER
+
+RUN echo "$BASE_USER:$PASSWORD" | chpasswd
+
+RUN echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER $BASE_USER
+
+WORKDIR /home/$BASE_USER
+
 ENV PATH=$PATH:$HOME/go/bin:$HOME/.local/share/nvim/mason/bin
 
-RUN dnf -y upgrade \
-  && dnf -y install \
+RUN sudo dnf -y upgrade \
+  && sudo dnf -y install \
   tmux \
   ruby \
   php-common \
@@ -32,7 +50,7 @@ RUN dnf -y upgrade \
   composer \
   julia-devel \
   lua5.1 \
-  && dnf clean all
+  && sudo dnf clean all
 
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
@@ -45,13 +63,15 @@ ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 
 RUN pip3 install pynvim
 
+RUN mkdir $HOME/.npm-global && npm config set prefix '~/.npm-global' && echo "export PATH=$HOME/.npm-global/bin:$PATH" >> $HOME/.profile && source $HOME/.profile
+
 RUN npm install -g neovim
 
 RUN go install github.com/jesseduffield/lazygit@latest
 
 RUN cargo install tree-sitter-cli
 
-RUN git clone https://github.com/JulesVerne22/JulianSmith.nvim.git ~/.config/nvim
+RUN git clone https://github.com/JulesVerne22/JulianSmith.nvim.git $HOME/.config/nvim
 
 RUN npm install -g eslint_d
 
@@ -59,8 +79,8 @@ RUN nvim --headless "+Lazy! sync" +qa
 
 RUN nvim --headless "+MasonInstall codelldb delve gopls clangd lua-language-server pyright rust-analyzer typescript-language-server eslint_d flake8 black gofumpt prettier stylua clang-format" +qa
 
-RUN cp -f /usr/bin/lua-5.1 /usr/bin/lua
+RUN sudo cp -f /usr/bin/lua-5.1 /usr/bin/lua
 
-COPY ./.tmux.conf /root/.tmux.conf
+COPY ./.tmux.conf /home/$BASE_USER/.tmux.conf
 
 CMD /bin/bash 
