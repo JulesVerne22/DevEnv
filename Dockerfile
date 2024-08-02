@@ -28,7 +28,7 @@ USER $BASE_USER
 
 WORKDIR /home/$BASE_USER
 
-ENV PATH=$PATH:$HOME/go/bin:$HOME/.local/share/nvim/mason/bin
+ENV PATH=$PATH:$HOME/go/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.cargo/bin
 
 RUN sudo dnf -y upgrade \
   && sudo dnf -y install \
@@ -56,14 +56,18 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | b
 
 ENV NVM_DIR="$HOME/.nvm"
 
-RUN . $HOME/.nvm/nvm.sh && nvm install $NODE_VERSION && nvm alias default $NODE_VERSON \
-    && nvm use default && . $HOME/.nvm/bash_completion
+RUN . $HOME/.nvm/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSON \
+    && nvm use default \
+    && . $HOME/.nvm/bash_completion
 
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 
 RUN pip3 install pynvim
 
-RUN mkdir $HOME/.npm-global && npm config set prefix '~/.npm-global' && echo "export PATH=$HOME/.npm-global/bin:$PATH" >> $HOME/.profile && source $HOME/.profile
+RUN mkdir $HOME/.npm-global && npm config set prefix '~/.npm-global' \
+    && echo "export PATH=$HOME/.npm-global/bin:$PATH" >> $HOME/.profile && source $HOME/.profile
 
 RUN npm install -g neovim
 
@@ -81,6 +85,21 @@ RUN nvim --headless "+MasonInstall codelldb delve gopls clangd lua-language-serv
 
 RUN sudo cp -f /usr/bin/lua-5.1 /usr/bin/lua
 
+RUN sudo rm -rf /usr/lib64/nvim/parser
+
+RUN sudo luarocks install jsregexp
+
 COPY ./.tmux.conf /home/$BASE_USER/.tmux.conf
 
-CMD /bin/bash 
+RUN sudo chown jjsmith:jjsmith /home/$BASE_USER/.tmux.conf
+
+RUN wget -P ~/.local/share/fonts https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip \
+    && cd ~/.local/share/fonts \
+    && unzip FiraCode.zip \
+    && rm FiraCode.zip \
+    && fc-cache -fv
+
+RUN cargo install starship --locked \
+    && echo 'eval "$(starship init bash)"' >> ~/.bashrc
+
+CMD tmux
