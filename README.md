@@ -18,6 +18,6 @@ Push to repository using:
 
 To use the container, run the following commands:
 
-```docker run -it --rm --detach --network host --name toolbox --mount type=bind,src=.,dst=/home/jjsmith/mnt -e TERM julesverne22/dev-env:latest /bin/bash```
+```docker run -it --rm --detach --network host --name toolbox --mount type=bind,src=.,dst=/home/jjsmith/mnt -e TERM julesverne22/dev-env:main /bin/bash```
 
 ```docker exec -it toolbox tmux```
